@@ -4,10 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VDT2024 Student Management</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+        }
+
+        h1, h2 {
+          text-align: center;
+        }
+
+        .container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin: 20px;
+        }
+
+        table {
+          border-collapse: collapse;
+          width: 100%;
+        }
+
+        th, td {
+          padding: 10px;
+          border: 1px solid #ddd;
+        }
+
+        .actions {
+          display: flex;
+          justify-content: space-around;
+          margin-top: 20px;
+          width: 100%;
+        }
+
+        button {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+        }
+
+        #view-details, #delete-student, #update-student {
+          background-color: #ddd;
+        }
+
+        #add-student {
+          background-color: lightgreen;
+        }
+        /* make action boxes have same width, 20% */
+        .action-box {
+          width: 250%;
+          border: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
-    <h1>VDT2024 Student Management</h1>
+    <h1>VDT2024 - Nguyen Don The Kiet - Student Management</h1>
     <div class="container">
         <h2>Students</h2>
         <table id="student-table">
@@ -15,19 +67,218 @@
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>School</th>
+                    <th>University</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
         <div class="actions">
-            <h2>Actions</h2>
-            <button id="view-details">View Details</button>
-            <button id="delete-student">Delete Student</button>
-            <button id="update-student">Update Student</button>
-            <button id="add-student">Add Student</button>
-        </div>
+            <div class="actions">
+                <div class="action-box">
+                    <h2>View Details</h2>
+                    <button id="view-details">View Details</button>
+                    <label for="student-id">Student ID:</label>
+                    <input type="text" id="view-student-id">
+                    <div id="student-details">
+                        <p id="student-name"></p>
+                        <p id="student-gender"></p>
+                        <p id="student-university"></p>
+                        <p id="student-yearOB"></p>
+                        <p id="student-email"></p>
+                        <p id="student-phoneNb"></p>
+                        <p id="student-country"></p>
+                    </div>
+
+                </div>
+                <div class="action-box">
+                    <h2>Delete Student</h2>
+                    <button id="delete-student">Delete Student</button>
+                    <label for="student-id">Student ID:</label>
+                    <input type="text" id="delete-student-id">
+                    <p id="delete-status"></p>
+                </div>
+                <div class="action-box">
+                    <h2>Update Student</h2>
+                    <button id="update-student">Update Student</button><br>
+                    <div id="update-student-details"><br>
+                        <label for="student-id">Student ID:</label>
+                        <input type="text" id="update-student-id"><br>
+                        <label for="student-name">Name:</label>
+                        <input type="text" id="update-student-name"><br>
+                        <label for="student-gender">Gender:</label>
+                        <input type="text" id="update-student-gender"><br>
+                        <label for="student-university">University:</label>
+                        <input type="text" id="update-student-university"><br>
+                        <label for="student-email">Email:</label>
+                        <input type="text" id="update-student-email"><br>
+                        <label for="student-phoneNb">Phone Number:</label>
+                        <input type="text" id="update-student-phoneNb"><br>
+                        <label for="student-country">Country:</label>
+                        <input type="text" id="update-student-country"><br>
+                        <label for="student-year-of-birth">Year of Birth:</label>
+                        <input type="text" id="update-student-yearOB"><br>
+                    </div>
+
+                </div>
+                <div class="action-box">
+                    <h2>Add Student</h2>
+                    <button id="add-student">Add Student</button>
+                    <div id="add-student-details">
+                        <label for="student-name">Name:</label>
+                        <input type="text" id="add-student-name"><br>
+                        <label for="student-gender">Gender:</label>
+                        <input type="text" id="add-student-gender"><br>
+                        <label for="student-university">University:</label>
+                        <input type="text" id="add-student-university"><br>
+                        <label for="student-email">Email:</label>
+                        <input type="text" id="add-student-email"><br>
+                        <label for="student-phoneNb">Phone Number:</label>
+                        <input type="text" id="add-student-phoneNb"><br>
+                        <label for="student-country">Country:</label>
+                        <input type="text" id="add-student-country"><br>
+                        <label for="student-year-of-birth">Year of Birth:</label>
+                        <input type="text" id="add-student-yearOB"><br>
+                </div>
+            </div>
     </div>
-    <script src="script.js"></script>
-</body>
-</html>
+    <script>
+        const studentTable = document.getElementById('student-table');
+        const tbody = studentTable.querySelector('tbody');
+        const viewDetailsButton = document.getElementById('view-details');
+        const deleteStudentButton = document.getElementById('delete-student');
+        const updateStudentButton = document.getElementById('update-student');
+        const addStudentButton = document.getElementById('add-student');
+        const url = "http://localhost:8000/"
+
+        async function fetchStudents() {
+            console.log("fetching students")
+            const response = await fetch(url + 'students'); // TODO: get API URL from Ansible
+            const data = await response.json();
+            if (Array.isArray(data)) {
+                populateTable(data);
+            } else {
+                console.error('Unexpected data format from backend. Please check API response.');
+            }
+        }
+
+
+        // Function to populate table with student data
+        function populateTable(students) {
+            tbody.innerHTML = ''; // Clear existing data
+            students.forEach(student => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                    <td>${student.university}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        fetchStudents();
+
+        // Add event listeners for buttons (details, delete, update, add)
+        // (These functions will need further implementation to handle specific actions)
+        viewDetailsButton.addEventListener('click', () => {
+            console.log('View Details clicked');
+            var studentId = document.getElementById('view-student-id').value;
+            console.log(url+ 'students/' + studentId);
+            fetch(url+ 'students/' + studentId, { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    // if student-name not in data, display "Student not found"
+                    console.log(data);
+                    if (!data.name) {
+                        document.getElementById('student-name').innerText = "Student not found";
+                    }
+                    else{
+                        document.getElementById('student-name').innerText = "Name: " + data.name;
+                        document.getElementById('student-gender').innerText = "Gender: " + data.gender;
+                        document.getElementById('student-university').innerText = "University: " + data.university;
+                        document.getElementById('student-yearOB').innerText = "Year of Birth: " + data.yearOB;
+                        document.getElementById('student-email').innerText = "Email: " + data.email;
+                        document.getElementById('student-phoneNb').innerText = "Phone Number: " + data.phoneNb;
+                        document.getElementById('student-country').innerText = "Country: " + data.country;
+                    }
+                });
+        });
+
+        deleteStudentButton.addEventListener('click', () => {
+            console.log('Delete Student clicked');
+            var studentId = document.getElementById('delete-student-id').value;
+            studentId = parseInt(studentId);
+            fetch(url+ 'students/' + studentId, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    document.getElementById('delete-status').innerText = data.message;
+                    fetchStudents();
+                });
+        });
+
+        updateStudentButton.addEventListener('click', () => {
+            console.log('Update Student clicked');
+            var studentId = document.getElementById('update-student-id').value;
+            studentId = parseInt(studentId);
+            var studentName = document.getElementById('update-student-name').value;
+            var studentUniversity = document.getElementById('update-student-university').value;
+            var studentEmail = document.getElementById('update-student-email').value;
+            var studentPhoneNb = document.getElementById('update-student-phoneNb').value;
+            var studentCountry = document.getElementById('update-student-country').value;
+            var studentYearOB = document.getElementById('update-student-yearOB').value;
+            var studentGender = document.getElementById('update-student-gender').value
+            fetch(url+ 'students/' + studentId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: studentName,
+                    university: studentUniversity,
+                    email: studentEmail,
+                    phoneNb: studentPhoneNb,
+                    country: studentCountry,
+                    yearOB : studentYearOB,
+                    gender : studentGender
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    fetchStudents();
+                });
+
+        });
+
+        addStudentButton.addEventListener('click', () => {
+            console.log('Add Student clicked');
+            var studentName = document.getElementById('add-student-name').value;
+            var studentUniversity = document.getElementById('add-student-university').value;
+            var studentEmail = document.getElementById('add-student-email').value;
+            var studentPhoneNb = document.getElementById('add-student-phoneNb').value;
+            var studentCountry = document.getElementById('add-student-country').value;
+            var studentYearOB = document.getElementById('add-student-yearOB').value;
+            var studentGender = document.getElementById('add-student-gender').value;
+            fetch(url+ 'students', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: studentName,
+                    university: studentUniversity,
+                    email: studentEmail,
+                    phoneNb: studentPhoneNb,
+                    country: studentCountry,
+                    yearOB : studentYearOB,
+                    gender: studentGender
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    fetchStudents();
+                });
+        });
+</script>
